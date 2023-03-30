@@ -2,10 +2,11 @@ from django.http import HttpResponse, JsonResponse,HttpRequest
 from django.views import View
 # Import user model
 from django.contrib.auth.models import User
-from .models import Task, Student
+from .models import Task
 # Import authentication classes
 from django.contrib.auth import authenticate
 from base64 import b64decode
+import json
 
 def isAuth(auth):
     if auth is None:
@@ -20,7 +21,7 @@ def isAuth(auth):
     user = authenticate(username=username, password=password)
 
     if user is not None:
-        return True
+        return user
     return False
 
 
@@ -54,6 +55,43 @@ def tasks(request: HttpRequest) -> JsonResponse:
         
     else:
         return JsonResponse({'message': 'Unauthorized'}, status=401)
+    
+def add_task(req:HttpRequest):
+    auth = req.headers.get('Authorization')
+    if isAuth(auth):
+        if req.method=='POST':
+            ans=req.body
+            ans=ans.decode()
+            ans=json.loads(ans)
+            tas=Task(
+                task=ans['task'],
+                description=ans['des'],
+                complited=ans['com'],
+                student=isAuth(auth)
+            )
+            tas.save()
+            return JsonResponse({'result':'ok'})
+    else:
+        return JsonResponse({'message': 'Unauthorized'}, status=401)
+
+def up_task(req:HttpRequest):
+    auth = req.headers.get('Authorization')
+    if isAuth(auth):
+        if req.method=='POST':
+            ans=req.body
+            ans=ans.decode()
+            ans=json.loads(ans)
+            task=Task.objects.filter(student=isAuth(auth)).update(
+                task=ans['task'],
+                description=ans['des'],
+                complited=ans['com'],
+            )            
+            return JsonResponse({'result':'ok'})
+    else:
+        return JsonResponse({'message': 'Unauthorized'}, status=401)
+
+
+
 
             
 
